@@ -1,0 +1,48 @@
+package common
+
+import (
+	"Gin/model"
+	"time"
+
+	"github.com/golang-jwt/jwt"
+)
+
+var jwtKey = []byte("a_secret_crect")
+
+type Claims struct {
+	UserId uint
+	jwt.StandardClaims
+}
+
+func ReleaseToken(user model.User) (string, error) {
+	expirationTime := time.Now().Add(1 * time.Hour)
+
+	claims := &Claims{
+		UserId: user.ID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+			Issuer:    "呼风唤雨丘比龙",
+			Subject:   "user token",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func ParseToken(tokenString string) (*jwt.Token, *Claims, error) {
+	claims := &Claims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (i interface{}, err error) {
+		return jwtKey, nil
+	})
+
+	return token, claims, err
+}
